@@ -25,19 +25,19 @@ import javafx.scene.input.MouseEvent;
 
 public class SampleController implements Initializable {
 	@FXML
-	private ComboBox<String> cbxCafes;
+	private ComboBox<Cafes> cbxCafes;
 	@FXML
-	private ComboBox<String> cbxIngredients;
+	private ComboBox<Ingredients> cbxIngredients;
 	@FXML
 	private Button btnMes;
 	@FXML
-	private ListView<String> lvTotalIngrdients;
+	private ListView<Ingredients> lvTotalIngrdients;
 	@FXML
 	private Label lblPreuCafe;
 	@FXML
 	private Button btnAfegirCafe;
 	@FXML
-	private ListView<String> lvCafes;
+	private ListView<Linia> lvCafes;
 	@FXML
 	private Label lblTotalComanda;
 	@FXML
@@ -45,11 +45,16 @@ public class SampleController implements Initializable {
 	
 	EntityManager em;
 	List<Cafes> LlistaCafes = new ArrayList<>();
+	ObservableList<Cafes> cafesCbx = FXCollections.observableArrayList();
 	List<Ingredients> LlistaIngredients = new ArrayList<>();
-	int preuIngredients = 1;
+	ObservableList<Ingredients> ingredientsCbx = FXCollections.observableArrayList();
+	ObservableList<Ingredients> itemsIngredientsLv = FXCollections.observableArrayList();
+	int preuIngredients = 0;
 	int preuComanda = 0;
-	ObservableList<String> itemsIngredients = FXCollections.observableArrayList();
-	ObservableList<String> itemsCamanda = FXCollections.observableArrayList();
+	
+	ObservableList<Linia> itemsCamanda = FXCollections.observableArrayList();
+	
+	Comanda comanda = new Comanda();
 	
 	@Override
 	public void initialize(URL arg0, ResourceBundle arg1) {
@@ -59,37 +64,34 @@ public class SampleController implements Initializable {
 		TypedQuery<Cafes> totsElsCafes= em.createQuery("SELECT c FROM Cafes c", Cafes.class);
 		LlistaCafes = totsElsCafes.getResultList();
 		
-		cbxCafes.setValue("Tria un cafè");
+		//cbxCafes.setValue("Tria un cafè");
 		for(Cafes c : LlistaCafes){
-			cbxCafes.getItems().add(c.toString());
-			
+			cafesCbx.add(c);
 		}
+		cbxCafes.setItems(cafesCbx);
 		
 		
 		TypedQuery<Ingredients> totsElsIngredients= em.createQuery("SELECT i FROM Ingredients i", Ingredients.class);
 		LlistaIngredients = totsElsIngredients.getResultList();
 		
-		cbxIngredients.setValue("Tria ingredients");
+		//cbxIngredients.setValue("Tria ingredients");
 		for(Ingredients i : LlistaIngredients){
-			cbxIngredients.getItems().add(i.toString());
+			ingredientsCbx.add(i);
 		}
+		cbxIngredients.setItems(ingredientsCbx);
 	}
 	
 	// Event Listener on Button[#btnMes].onMouseClicked
 	@FXML
 	public void AfegirIngredient(MouseEvent event) {
-		int posicioIngredient = 0;
 		int preuObtingut = 0;
 		
-		String igredient = cbxIngredients.getValue();
+		Ingredients igredientSelecionat = cbxIngredients.getSelectionModel().getSelectedItem();
 		
-		itemsIngredients.add(igredient);
-		lvTotalIngrdients.setItems(itemsIngredients);
+		itemsIngredientsLv.add(igredientSelecionat);
+		lvTotalIngrdients.setItems(itemsIngredientsLv);
 		
-		while (!igredient.equals(LlistaIngredients.get(posicioIngredient).getNom()) && posicioIngredient < LlistaIngredients.size()) {
-			posicioIngredient++;
-		}
-		preuObtingut = LlistaIngredients.get(posicioIngredient).getPreu();
+		preuObtingut = igredientSelecionat.getPreu();
 		preuIngredients += preuObtingut;
 		
 		lblPreuCafe.setText(""+preuIngredients);
@@ -98,7 +100,32 @@ public class SampleController implements Initializable {
 	// Event Listener on Button[#btnAfegirCafe].onMouseClicked
 	@FXML
 	public void AfegirCafe(MouseEvent event) {
-		String cafeTriat = cbxCafes.getValue();
+		Linia linia = new Linia();
+		List<Linia> liniaComanda = new ArrayList<>();
+		List<Ingredients> ingradientsTriats = new ArrayList<>();
+		
+		Cafes cafeTriat = cbxCafes.getSelectionModel().getSelectedItem();
+		linia.setCafe(cafeTriat);
+		
+		for(Ingredients i : itemsIngredientsLv){
+			ingradientsTriats.add(i);
+		}
+		linia.setIngredients(ingradientsTriats);
+		
+		itemsCamanda.add(linia);
+		lvCafes.setItems(itemsCamanda);
+		
+		preuComanda += preuIngredients;
+		lblTotalComanda.setText(""+preuComanda);
+		
+		preuIngredients = 0;
+		lblPreuCafe.setText(""+preuIngredients);
+		
+		liniaComanda.add(linia);
+		comanda.setLinies(liniaComanda);
+		
+		/*int posicioCafe = 0;
+		Cafes cafeTriat = cbxCafes.getSelectionModel().getSelectedItem();
 		
 		if(cafeTriat.equals("Tria un cafè")){
 			Alert alert = new Alert(AlertType.INFORMATION);
@@ -107,6 +134,10 @@ public class SampleController implements Initializable {
 			alert.setContentText("No has triat cap cafè");
 			alert.showAndWait();
 		}else{
+			/*while (!cafeTriat.equals(LlistaCafes.get(posicioCafe).getNom()) && posicioCafe < LlistaCafes.size()) {
+				posicioCafe++;
+			}
+			linia.setCafe(LlistaCafes.get(posicioCafe));
 			
 			for(int i=0; i<itemsIngredients.size(); i++){
 				cafeTriat+= ", "+itemsIngredients.get(i);
@@ -117,12 +148,16 @@ public class SampleController implements Initializable {
 			
 			preuComanda += preuIngredients;
 			lblTotalComanda.setText(""+preuComanda);
-		}
+		}*/
 	}
 	
 	// Event Listener on Button[#btnAcabar].onMouseClicked
 	@FXML
 	public void AcabaComanda(MouseEvent event) {
-		// TODO Autogenerated
+		
+		em.getTransaction();
+        em.persist(comanda);
+        em.getTransaction().commit();
+        
 	}
 }
